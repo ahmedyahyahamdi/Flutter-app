@@ -32,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // No server session: check saved username for a nicer UX, but do not auto-navigate
     final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('username');
+    final savedEmail = prefs.getString('email');
     if (savedEmail != null) {
       // We don't need to pass it, as LoginPage will read it itself; keep this to maintain behaviour
       // Add a slight delay to avoid flicker

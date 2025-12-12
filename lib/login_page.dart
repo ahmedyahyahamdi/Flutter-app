@@ -39,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
   // ---------------------------------------------------------------------------
   Future<void> _prefillSavedEmail() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('username');
+    final savedEmail = prefs.getString('email');
     if (savedEmail != null && mounted) {
       _emailController.text = savedEmail;
     }
@@ -72,7 +72,16 @@ class _LoginPageState extends State<LoginPage> {
       if (auth.user == null) throw Exception('Invalid credentials');
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('username', email);
+      await prefs.setString('email', email);
+
+      // If a displayName isn't stored, derive a simple one from the email prefix.
+      final existingName = prefs.getString('displayName');
+      if (existingName == null || existingName.isEmpty) {
+        final prefix = email.split('@').first;
+        final displayName = prefix.isNotEmpty ? '${prefix[0].toUpperCase()}${prefix.substring(1)}' : prefix;
+        await prefs.setString('displayName', displayName);
+        await prefs.setString('username', displayName);
+      }
 
       if (mounted) {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MqttMonitorPage()));

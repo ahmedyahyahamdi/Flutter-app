@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dashboard_page.dart';
 import 'login_page.dart';
+import 'chatbot_screen.dart';
 
 class MqttMonitorPage extends StatefulWidget {
   const MqttMonitorPage({super.key});
@@ -343,6 +344,12 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
       appBar: AppBar(
         title: const Text('Monitoring RPi'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.chat),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen()));
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.dashboard),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DashboardPage())),

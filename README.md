@@ -14,3 +14,14 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## Chatbot Assistant
+
+Open the Dashboard and tap the chat icon (bottom-right) to launch the agricultural assistant. The assistant supports online queries (Grok API) and local fallback responses for offline use.
+
+To install dependencies and run the app:
+
+```bash
+flutter pub get
+flutter run
+```

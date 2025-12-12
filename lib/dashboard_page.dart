@@ -5,8 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 // that initializes and exposes your Supabase client.
 import 'supabase_config.dart'; 
 import 'login_page.dart';
+import 'chatbot_screen.dart';
 
 class DashboardPage extends StatefulWidget {
+  const DashboardPage({Key? key}) : super(key: key);
+
   @override
   _DashboardPageState createState() => _DashboardPageState();
 }
@@ -41,10 +44,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('email');
     final username = prefs.getString('username');
-    
+
     setState(() {
-      _isLoggedIn = username != null;
+      _isLoggedIn = (email != null && email.isNotEmpty) || (username != null && username.isNotEmpty);
     });
 
     if (_isLoggedIn) {
@@ -574,6 +578,13 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green[700],
+        child: const Icon(Icons.chat),
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen()));
+        },
       ),
     );
   }

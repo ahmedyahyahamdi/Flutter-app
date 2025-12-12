@@ -22,6 +22,7 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -32,6 +33,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   void dispose() {
+    _displayNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -46,7 +48,8 @@ class _SignUpPageState extends State<SignUpPage> {
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    final displayName = _displayNameController.text.trim();
+    if (displayName.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       _showSnack('Please fill in all fields.');
       return;
     }
@@ -87,7 +90,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
         if (auth.user != null) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('username', email);
+          await prefs.setString('email', email);
+          await prefs.setString('displayName', _displayNameController.text.trim());
+          await prefs.setString('username', _displayNameController.text.trim()); // backward compatibility
           if (mounted) {
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MqttMonitorPage()));
             return;
@@ -99,7 +104,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (mounted) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('username', email);
+        await prefs.setString('email', email);
+        await prefs.setString('displayName', _displayNameController.text.trim());
+        await prefs.setString('username', _displayNameController.text.trim());
         _showSnack('Registration successful. You can sign in now.');
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
       }
@@ -177,6 +184,22 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 50),
+
+                // Display Name Field
+                TextField(
+                  controller: _displayNameController,
+                  keyboardType: TextInputType.name,
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.9),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
 
                 // Email Field
                 TextField(
