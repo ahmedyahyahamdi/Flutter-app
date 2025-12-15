@@ -1,18 +1,8 @@
-// File: main.dart
-
-import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'supabase_config.dart';
-import 'dashboard_page.dart';
-import 'login_page.dart'; // Ensure this is imported
 import 'splash_screen.dart';
-import 'mqtt_monitor_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

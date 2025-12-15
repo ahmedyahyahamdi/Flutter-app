@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// IMPORTANT: Ensure you have a 'supabase_config.dart' file 
+// IMPORTANT: Ensure you have a 'supabase_config.dart' file
 // that initializes and exposes your Supabase client.
-import 'supabase_config.dart'; 
+import 'supabase_config.dart';
 import 'login_page.dart';
 import 'chatbot_screen.dart';
 
@@ -19,7 +19,7 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isLoggedIn = false;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  
+
   // --- Existing State Variables ---
   List<Map<String, dynamic>> sensorHistory = [];
   bool isLoading = true;
@@ -30,7 +30,7 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     _checkLoginStatus();
   }
-  
+
   @override
   void dispose() {
     _usernameController.dispose();
@@ -39,7 +39,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // ----------------------------------------------------------------------
-  // 🔐 AUTHENTICATION LOGIC 
+  // 🔐 AUTHENTICATION LOGIC
   // ----------------------------------------------------------------------
 
   Future<void> _checkLoginStatus() async {
@@ -48,7 +48,8 @@ class _DashboardPageState extends State<DashboardPage> {
     final username = prefs.getString('username');
 
     setState(() {
-      _isLoggedIn = (email != null && email.isNotEmpty) || (username != null && username.isNotEmpty);
+      _isLoggedIn = (email != null && email.isNotEmpty) ||
+          (username != null && username.isNotEmpty);
     });
 
     if (_isLoggedIn) {
@@ -69,7 +70,8 @@ class _DashboardPageState extends State<DashboardPage> {
       // Use ScaffoldMessenger if the widget is part of a Scaffold
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter both email and password.')),
+          const SnackBar(
+              content: Text('Please enter both email and password.')),
         );
       }
       return;
@@ -80,17 +82,17 @@ class _DashboardPageState extends State<DashboardPage> {
         isLoading = true;
         errorMessage = '';
       });
-        
+
       // Supabase login (Assuming username is the email)
       final response = await SupabaseConfig().client.auth.signInWithPassword(
-          email: username,
-          password: password,
-        );
+            email: username,
+            password: password,
+          );
 
       if (response.user != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('username', username);
-        
+
         setState(() {
           _isLoggedIn = true;
           errorMessage = '';
@@ -100,7 +102,6 @@ class _DashboardPageState extends State<DashboardPage> {
       } else {
         throw Exception('Login failed: Invalid credentials.');
       }
-
     } catch (e) {
       setState(() {
         errorMessage = 'Login Error: Check credentials or server status.';
@@ -108,22 +109,23 @@ class _DashboardPageState extends State<DashboardPage> {
       });
     }
   }
-  
+
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('username');
-    
+
     await SupabaseConfig().client.auth.signOut();
-    
+
     setState(() {
       _isLoggedIn = false;
       sensorHistory = []; // Clear data
       errorMessage = '';
     });
-    
+
     // If this page was pushed, pop it to go back to the previous screen (e.g., login wrapper)
     if (mounted) {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (_) => false);
+      Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (_) => const LoginPage()), (_) => false);
     }
   }
 
@@ -133,7 +135,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _fetchSensorHistory() async {
     if (!_isLoggedIn) return;
-    
+
     try {
       setState(() {
         isLoading = true;
@@ -143,9 +145,12 @@ class _DashboardPageState extends State<DashboardPage> {
       final supabaseConfig = SupabaseConfig();
       final response = await supabaseConfig.client
           .from('sensor_readings')
-          .select('luminosity, temperature_air, humidity_air, temperature_soil, humidity_soil, timestamp')
+          .select(
+              'luminosity, temperature_air, humidity_air, temperature_soil, humidity_soil, gas, water, timestamp')
           .order('timestamp', ascending: false)
           .limit(100);
+
+      debugPrint("Supabase response: $response");
 
       setState(() {
         sensorHistory = List<Map<String, dynamic>>.from(response);
@@ -161,19 +166,19 @@ class _DashboardPageState extends State<DashboardPage> {
 
   List<FlSpot> _getChartData(String sensorKey) {
     List<FlSpot> spots = [];
-    
+
     // We process data in reverse order of fetching (oldest to newest for the chart's x-axis)
     final reversedHistory = sensorHistory.reversed.toList();
 
     for (int i = 0; i < reversedHistory.length; i++) {
       final data = reversedHistory[i];
       final value = data[sensorKey];
-      
+
       if (value != null && value is num) {
         spots.add(FlSpot(i.toDouble(), value.toDouble()));
       }
     }
-    
+
     return spots;
   }
 
@@ -183,7 +188,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildChart(String title, String sensorKey, Color color, String unit) {
     final chartData = _getChartData(sensorKey);
-    
+
     if (chartData.isEmpty) {
       return Card(
         margin: const EdgeInsets.only(bottom: 16),
@@ -198,11 +203,11 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       );
     }
-    
+
     // Determine min/max Y for the chart scale
     double minY = chartData.map((e) => e.y).reduce((a, b) => a < b ? a : b);
     double maxY = chartData.map((e) => e.y).reduce((a, b) => a > b ? a : b);
-    
+
     // Add buffer to the min/max
     minY = (minY * 0.95).floorToDouble();
     maxY = (maxY * 1.05).ceilToDouble();
@@ -253,15 +258,17 @@ class _DashboardPageState extends State<DashboardPage> {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: (chartData.length / 5).floorToDouble() > 0 
-                          ? (chartData.length / 5).floorToDouble() 
-                          : 1,
+                        interval: (chartData.length / 5).floorToDouble() > 0
+                            ? (chartData.length / 5).floorToDouble()
+                            : 1,
                         getTitlesWidget: (value, meta) {
                           final index = value.toInt();
-                          final reversedIndex = sensorHistory.length - 1 - index;
-                          
+                          final reversedIndex =
+                              sensorHistory.length - 1 - index;
+
                           if (index >= 0 && index < sensorHistory.length) {
-                            final timestamp = sensorHistory[reversedIndex]['timestamp'];
+                            final timestamp =
+                                sensorHistory[reversedIndex]['timestamp'];
                             if (timestamp != null) {
                               final time = DateTime.parse(timestamp);
                               return SideTitleWidget(
@@ -277,10 +284,14 @@ class _DashboardPageState extends State<DashboardPage> {
                         },
                       ),
                     ),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.withOpacity(0.3))),
+                  borderData: FlBorderData(
+                      show: true,
+                      border: Border.all(color: Colors.grey.withOpacity(0.3))),
                   lineBarsData: [
                     LineChartBarData(
                       spots: chartData,
@@ -308,7 +319,7 @@ class _DashboardPageState extends State<DashboardPage> {
     if (sensorHistory.isEmpty) return const SizedBox.shrink();
 
     final latestData = sensorHistory.first;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -345,7 +356,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -378,8 +388,30 @@ class _DashboardPageState extends State<DashboardPage> {
                     Colors.green,
                   ),
                 ),
+
                 const SizedBox(width: 8),
-                const Expanded(child: SizedBox()),
+                Expanded(
+                  child: _buildSummaryCard(
+                    '🧪 Gas',
+                    latestData['gas']?.toString() ?? 'N/A',
+                    'ppm',
+                    Colors.purple,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildSummaryCard(
+                    '🚰 Water Level',
+                    latestData['water_level']?.toString() ?? 'N/A',
+                    '%',
+                    Colors.cyan,
+                  ),
+                ),
               ],
             ),
           ],
@@ -388,7 +420,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, String unit, Color color) {
+  Widget _buildSummaryCard(
+      String title, String value, String unit, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -494,7 +527,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
-  
+
   // ----------------------------------------------------------------------
   // 🏠 MAIN BUILD METHOD (Conditional Rendering)
   // ----------------------------------------------------------------------
@@ -546,13 +579,11 @@ class _DashboardPageState extends State<DashboardPage> {
                   style: TextStyle(color: Colors.red[800]),
                 ),
               ),
-            
             const Text(
               'Sensor Data Visualization',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -567,11 +598,36 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Column(
                             children: [
                               _buildSummaryCards(),
-                              _buildChart('Light (Luminosity)', 'luminosity', Colors.amber, 'lux'),
-                              _buildChart('Air Temperature', 'temperature_air', Colors.red, '°C'),
-                              _buildChart('Air Humidity', 'humidity_air', Colors.blue, '%'),
-                              _buildChart('Soil Temperature', 'temperature_soil', Colors.orange, '°C'),
-                              _buildChart('Soil Humidity', 'humidity_soil', Colors.green, '%'),
+                              _buildChart(
+                                'Light (Luminosity)',
+                                'luminosity',
+                                Colors.amber,
+                                'lux',
+                              ),
+                              _buildChart(
+                                'Air Temperature',
+                                'temperature_air',
+                                Colors.red,
+                                '°C',
+                              ),
+                              _buildChart(
+                                'Air Humidity',
+                                'humidity_air',
+                                Colors.blue,
+                                '%',
+                              ),
+                              _buildChart(
+                                'Soil Temperature',
+                                'temperature_soil',
+                                Colors.orange,
+                                '°C',
+                              ),
+                              _buildChart(
+                                'Soil Humidity',
+                                'humidity_soil',
+                                Colors.green,
+                                '%',
+                              ),
                             ],
                           ),
                         ),
@@ -583,7 +639,8 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: Colors.green[700],
         child: const Icon(Icons.chat),
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen()));
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const ChatbotScreen()));
         },
       ),
     );

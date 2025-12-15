@@ -40,6 +40,8 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
     'rtmp': {'value': 'N/A', 'timestamp': null},
     'shum': {'value': 'N/A', 'timestamp': null},
     'stmp': {'value': 'N/A', 'timestamp': null},
+    'gas': {'value': 'N/A', 'timestamp': null},
+    'water': {'value': 'N/A', 'timestamp': null},
   };
 
   @override
@@ -61,7 +63,8 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
 
   void _log(String msg) {
     setState(() {
-      logHistory.insert(0, '${DateTime.now().toString().substring(11, 19)}: $msg');
+      logHistory.insert(
+          0, '${DateTime.now().toString().substring(11, 19)}: $msg');
       if (logHistory.length > 15) logHistory.removeLast();
     });
     print('MQTT: $msg');
@@ -157,9 +160,11 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
     setState(() {
       rawMessage = msg;
       final cleaned = _sanitize(msg);
-
+      print('🔹 Raw MQTT message: $msg'); // ✅ raw
+      print('🔹 Cleaned message: $cleaned');
       try {
         parsedData = jsonDecode(cleaned);
+        print('🔹 Parsed JSON: $parsedData');
         _log('JSON détecté (${parsedData.length} clés)');
 
         final now = DateTime.now();
@@ -187,7 +192,8 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
     return Card(
       child: ListTile(
         leading: CircleAvatar(radius: 6, backgroundColor: color),
-        title: Text(status, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+        title: Text(status,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold)),
         subtitle: Text('$broker:$port'),
         trailing: IconButton(
           icon: const Icon(Icons.refresh),
@@ -206,7 +212,8 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
             children: [
               Icon(Icons.sensors, size: 50, color: Colors.grey[300]),
               const SizedBox(height: 16),
-              Text('En attente de données...', style: TextStyle(color: Colors.grey[600])),
+              Text('En attente de données...',
+                  style: TextStyle(color: Colors.grey[600])),
               const SizedBox(height: 10),
               const CircularProgressIndicator(),
             ],
@@ -242,7 +249,10 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
             ),
             Text(
               _timeAgo(ts),
-              style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic),
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic),
             )
           ],
         ),
@@ -258,7 +268,8 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
               children: [
                 Icon(Icons.sensors, color: Colors.blue),
                 SizedBox(width: 8),
-                Text('Données Capteurs', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Données Capteurs',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 16),
@@ -267,6 +278,8 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
             item('🌡️ Température Air', 'rtmp', '°C'),
             item('💦 Humidité Sol', 'shum', '%'),
             item('🌱 Température Sol', 'stmp', '°C'),
+            item('🧪 Gaz', 'gas', 'ppm'),
+            item('🚰 Niveau d\'eau', 'water', '%'),
           ],
         ),
       ),
@@ -293,7 +306,8 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
           child: ListView(
             reverse: true,
             children: logHistory
-                .map((e) => Text(e, style: const TextStyle(color: Colors.green, fontSize: 11)))
+                .map((e) => Text(e,
+                    style: const TextStyle(color: Colors.green, fontSize: 11)))
                 .toList(),
           ),
         ),
@@ -334,7 +348,8 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
     await prefs.remove('username');
 
     if (mounted) {
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (_) => false);
+      Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (_) => const LoginPage()), (_) => false);
     }
   }
 
@@ -347,12 +362,14 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
           IconButton(
             icon: const Icon(Icons.chat),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ChatbotScreen()));
             },
           ),
           IconButton(
             icon: const Icon(Icons.dashboard),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DashboardPage())),
+            onPressed: () => Navigator.push(
+                context, MaterialPageRoute(builder: (_) => DashboardPage())),
           ),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
           IconButton(
@@ -371,7 +388,9 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
                     '• rhum (%)\n'
                     '• rtmp (°C)\n'
                     '• shum (%)\n'
-                    '• stmp (°C)',
+                    '• stmp (°C)'
+                    '• gas (ppm)\n'
+                    '• water (%)\n',
                   ),
                   actions: [
                     TextButton(
@@ -385,7 +404,6 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
           ),
         ],
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -408,7 +426,6 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
           ],
         ),
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: mqttConnected ? null : _connect,
         tooltip: 'Reconnecter',
