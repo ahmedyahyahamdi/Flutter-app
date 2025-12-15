@@ -33,6 +33,10 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
   Map<String, dynamic> parsedData = {};
   Timer? _uiTimer;
 
+  // 🔴 ADDED: Gas Alert State and Threshold
+  final double gasThreshold = 20.0;
+  bool isGasAlertActive = false;
+
   // Sensor cache
   final Map<String, Map<String, dynamic>> _sensorCache = {
     'lum': {'value': 'N/A', 'timestamp': null},
@@ -156,18 +160,67 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
     });
   }
 
+  // 🔴 ADDED: Alert Check Method
+  void _checkGasAlert() {
+    final gasData = _sensorCache['gas']!;
+    final gasValueString = gasData['value'] as String;
+    final gasValue = double.tryParse(gasValueString);
+
+    if (gasValue != null) {
+      bool newAlertState = gasValue > gasThreshold;
+
+      // Only trigger notification/state change if the alert status has actually changed
+      if (newAlertState != isGasAlertActive) {
+        setState(() {
+          isGasAlertActive = newAlertState;
+        });
+
+        if (isGasAlertActive) {
+          _showGasAlertSnackBar(gasValue);
+        }
+      }
+      debugPrint('Gas Value: $gasValue, Alert Active: $isGasAlertActive');
+    }
+  }
+
+  // 🔴 ADDED: SnackBar Display Method
+  void _showGasAlertSnackBar(double gasValue) {
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Clear any previous SnackBar to ensure the new alert is instantly visible
+    messenger.clearSnackBars();
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          // 🔴 UPDATED MESSAGE: Include activation notice
+          '⚠️ ALERTE GAZ! Niveau supérieur à ${gasThreshold.toStringAsFixed(0)} ppm (${gasValue.toStringAsFixed(1)}).\n'
+          'ACTION: Ventilateur, LED rouge et Buzzer ACTIVÉS !',
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  // 🟡 MODIFIED: Handle message to include alert check
   void _handleMessage(String msg) {
     setState(() {
       rawMessage = msg;
       final cleaned = _sanitize(msg);
-      print('🔹 Raw MQTT message: $msg'); // ✅ raw
+      print('🔹 Raw MQTT message: $msg');
       print('🔹 Cleaned message: $cleaned');
+
       try {
         parsedData = jsonDecode(cleaned);
         print('🔹 Parsed JSON: $parsedData');
         _log('JSON détecté (${parsedData.length} clés)');
 
         final now = DateTime.now();
+
+        // Update sensor cache
         parsedData.forEach((key, value) {
           if (_sensorCache.containsKey(key)) {
             _sensorCache[key] = {
@@ -176,6 +229,9 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
             };
           }
         });
+
+        // 🔴 CRITICAL: Call the alert check after parsing the new data
+        _checkGasAlert();
       } catch (e) {
         _log('JSON invalide: $e');
       }
@@ -228,6 +284,12 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
       final ts = data['timestamp'];
       final fresh = ts != null && DateTime.now().difference(ts).inSeconds < 45;
 
+      // 🟡 MODIFIED: Highlight Gas item if alert is active
+      final isGasItem = key == 'gas';
+      final itemColor = isGasItem && isGasAlertActive
+          ? Colors.red
+          : (fresh ? Colors.black : Colors.grey);
+
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
@@ -240,7 +302,7 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
                   val,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: fresh ? Colors.black : Colors.grey,
+                    color: itemColor,
                   ),
                 ),
                 const SizedBox(width: 5),
@@ -278,6 +340,7 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
             item('🌡️ Température Air', 'rtmp', '°C'),
             item('💦 Humidité Sol', 'shum', '%'),
             item('🌱 Température Sol', 'stmp', '°C'),
+            // Gas item will now be highlighted red if the alert is active
             item('🧪 Gaz', 'gas', 'ppm'),
             item('🚰 Niveau d\'eau', 'water', '%'),
           ],
@@ -383,12 +446,13 @@ class _MqttMonitorPageState extends State<MqttMonitorPage> {
                     'Broker: $broker:$port\n'
                     'Topic: $topic\n'
                     'Status: $status\n\n'
+                    'Seuil d\'Alerte Gaz: ${gasThreshold.toStringAsFixed(1)} ppm\n\n' // 🟡 Added info
                     'Capteurs disponibles:\n'
                     '• lum (lux)\n'
                     '• rhum (%)\n'
                     '• rtmp (°C)\n'
                     '• shum (%)\n'
-                    '• stmp (°C)'
+                    '• stmp (°C)\n'
                     '• gas (ppm)\n'
                     '• water (%)\n',
                   ),
