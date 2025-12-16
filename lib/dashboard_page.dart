@@ -539,7 +539,7 @@ class _DashboardPageState extends State<DashboardPage> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Dashboard Access'),
-          backgroundColor: Colors.blue[700],
+          backgroundColor: Colors.green[700],
         ),
         body: _buildLoginForm(),
       );
@@ -549,7 +549,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sensor Data Charts'),
-        backgroundColor: Colors.blue[700],
+        backgroundColor:Colors.green[700],
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
